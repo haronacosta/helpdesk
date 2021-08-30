@@ -2,29 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class PassportAuthController extends Controller
 {
     /**
      * Registration
      */
-    public function register(Request $request)
+    public function register(StoreUserRequest $request)
     {
-        $this->validate($request, [
-            'name' => 'required|min:4',
-            'email' => 'required|email',
-            'password' => 'required|min:8',
-        ]);
+        $data = $request->all();
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password)
-        ]);
+        $data['password'] = bcrypt($request->password);
 
-        $token = $user->createToken('LaravelAuthApp')->accessToken;
+        $user = User::create($data);
+
+        $token = $user->createToken('HelpdeskAuth')->accessToken;
 
         return response()->json(['token' => $token], 200);
     }
@@ -39,11 +35,11 @@ class PassportAuthController extends Controller
             'password' => $request->password
         ];
 
-        if (auth()->attempt($data)) {
-            $token = auth()->user()->createToken('LaravelAuthApp')->accessToken;
+        if (Auth::attempt($data)) {
+            $token = Auth::user()->createToken('HelpdeskAuth')->accessToken;
             return response()->json(['token' => $token], 200);
         } else {
-            return response()->json(['error' => 'Unauthorised'], 401);
+            return response()->json(['error' => 'Invalid Credentials'], 401);
         }
     }
 }
